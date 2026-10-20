@@ -2,11 +2,11 @@
  * Planned API endpoint constants for future FastAPI backend integration.
  *
  * These map to the backend's REST API contracts.
- * Used by HTTP repository implementations (not yet active).
+ * Used by HTTP repository implementations.
  */
 
 export const API_ENDPOINTS = {
-  // Auth (future)
+  // Auth
   AUTH_REGISTER: '/api/v1/auth/register',
   AUTH_LOGIN: '/api/v1/auth/login',
   AUTH_LOGOUT: '/api/v1/auth/logout',
@@ -33,4 +33,11 @@ export const API_ENDPOINTS = {
 
   // Health
   HEALTH: '/api/v1/health',
+
+  // --- NEW SPRINT 2 ENDPOINTS ---
+  // AI Lookbook
+  LOOKBOOK_GENERATE: '/api/v1/lookbook',
+
+  // Weather Suggestions
+  WEATHER_SUGGESTIONS: '/api/v1/weather-suggestions',
 } as const;

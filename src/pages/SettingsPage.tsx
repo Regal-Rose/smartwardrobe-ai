@@ -4,17 +4,18 @@ import { Save, Check, Moon, Sun, Monitor } from 'lucide-react';
 import { useServices } from '../app/ServiceProvider';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-
-type AppearanceMode = 'light' | 'dark' | 'system';
+import { useTheme } from '../hooks/useTheme';
 
 export function SettingsPage() {
   const { preferencesRepo, dataMode } = useServices();
   const navigate = useNavigate();
   const [displayName, setDisplayName] = useState('');
-  const [appearance, setAppearance] = useState<AppearanceMode>('light');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Bring in the live global theme state
+  const { theme, setTheme } = useTheme();
 
   useEffect(() => {
     preferencesRepo.get().then((p) => {
@@ -52,7 +53,6 @@ export function SettingsPage() {
         <p className="text-body mt-1">Manage your profile and application preferences.</p>
       </div>
 
-      {/* Profile */}
       <form onSubmit={handleSubmit}>
         <section className="bg-surface rounded-xl border border-border-light p-5 space-y-4">
           <h2 className="text-sm font-semibold text-ink">Profile</h2>
@@ -82,11 +82,11 @@ export function SettingsPage() {
         </section>
       </form>
 
-      {/* Appearance */}
+      {/* --- UNLOCKED APPEARANCE SECTION --- */}
       <section className="bg-surface rounded-xl border border-border-light p-5 space-y-4">
         <h2 className="text-sm font-semibold text-ink">Appearance</h2>
         <p className="text-xs text-ink-muted">
-          Dark mode is planned for a future release. Currently using light theme.
+          Customise the appearance of your wardrobe interface.
         </p>
         <div className="flex gap-2">
           {[
@@ -97,13 +97,11 @@ export function SettingsPage() {
             <button
               key={mode}
               type="button"
-              onClick={() => setAppearance(mode)}
-              disabled={mode !== 'light'}
+              onClick={() => setTheme(mode)}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg border transition-all duration-200
-                ${
-                  appearance === mode
-                    ? 'bg-sage-pale text-sage-deep border-sage'
-                    : 'bg-surface text-ink-muted border-border hover:border-border-strong disabled:opacity-40 disabled:cursor-not-allowed'
+                ${theme === mode
+                  ? 'bg-sage-pale text-sage-deep border-sage'
+                  : 'bg-surface text-ink-muted border-border hover:border-border-strong'
                 }
               `}
             >
@@ -114,16 +112,14 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* Data Mode */}
       <section className="bg-surface rounded-xl border border-border-light p-5 space-y-3">
         <h2 className="text-sm font-semibold text-ink">Data Source</h2>
         <div className="flex items-center gap-3">
           <span
-            className={`px-3 py-1 text-xs font-medium rounded-full ${
-              dataMode === 'mock'
+            className={`px-3 py-1 text-xs font-medium rounded-full ${dataMode === 'mock'
                 ? 'bg-warning-light text-warning'
                 : 'bg-success-light text-success'
-            }`}
+              }`}
           >
             {dataMode === 'mock' ? 'Demo Mode' : 'API Connected'}
           </span>
@@ -135,7 +131,6 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* Account */}
       <section className="bg-surface rounded-xl border border-border-light p-5 space-y-3">
         <h2 className="text-sm font-semibold text-ink">Account</h2>
         <p className="text-xs text-ink-muted">Sign out of this account on this browser.</p>
@@ -145,7 +140,6 @@ export function SettingsPage() {
         }}>Log out</Button>
       </section>
 
-      {/* About */}
       <section className="bg-surface rounded-xl border border-border-light p-5 space-y-2">
         <h2 className="text-sm font-semibold text-ink">About</h2>
         <p className="text-xs text-ink-muted">
