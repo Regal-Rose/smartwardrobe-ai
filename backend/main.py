@@ -2,11 +2,11 @@
 import urllib.request
 import urllib.parse
 from datetime import datetime
-import hashlib, hmac, os, secrets, sqlite3, json, uuid
+import hashlib, hmac, os, secrets, sqlite3, json, uuid, shutil, io
 from contextlib import closing
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Request, Response
+from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File, Form
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from pydantic import BaseModel, EmailStr, Field
@@ -14,6 +14,17 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from rembg import remove
+from PIL import Image
+from dotenv import load_dotenv
+import replicate
+
+load_dotenv()
+
+class OutfitPlan(BaseModel):
+    date: str          # Format: 'YYYY-MM-DD'
+    outfit_id: int     # The ID of the saved look
+    description: str   # E.g., "Casual Tuesday"
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("SMARTWARDROBE_DB", str(ROOT / "smartwardrobe.db")))
@@ -47,7 +58,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 async def limit_upload_size(request: Request, call_next):
     if request.headers.get("content-length"):
         content_length = int(request.headers.get("content-length"))
-        if content_length > 100 * 1024 * 1024:  # 10 MB limit (adjusted for images)
+        if content_length > 100 * 1024 * 1024:  # 100 MB limit (adjusted for images)
             return Response("Request entity too large", status_code=413)
     response = await call_next(request)
     return response
@@ -571,10 +582,6 @@ def activity_analytics(request: Request, limit: int = 30):
         favorites = db.execute("SELECT outfit_id,created_at FROM outfit_favourites WHERE user_id=? ORDER BY created_at DESC LIMIT ?", (user["id"],limit)).fetchall()
     return {"recentWears":[{"id":r["id"],"outfitId":r["outfit_id"],"wornAt":r["worn_at"],"notes":r["notes"]} for r in wears],"recentFeedback":[{"outfitId":r["outfit_id"],"feedback":r["feedback"],"updatedAt":r["updated_at"]} for r in feedback],"recentFavourites":[{"outfitId":r["outfit_id"],"createdAt":r["created_at"]} for r in favorites]}
 
-# ==========================================
-# NEW: GET /api/v1/weather
-# Connects perfectly to your frontend WeatherSuggestionsPage.tsx
-# ==========================================
 @app.get("/api/v1/weather")
 @limiter.limit("10/minute") 
 def get_weather_suggestions(lat: float, lon: float, request: Request):
@@ -605,11 +612,9 @@ def get_weather_suggestions(lat: float, lon: float, request: Request):
     else: season = "winter"
         
     with closing(connect()) as db:
-        # Fetch the entire wardrobe for the user, then filter in Python
         rows = db.execute("SELECT id, payload FROM garments WHERE user_id=?", (user_id,)).fetchall()
         wardrobe = [json.loads(row["payload"]) for row in rows]
         
-        # Filter logic strictly by season
         def filter_items(cats):
             res = []
             for item in wardrobe:
@@ -656,3 +661,119 @@ def generate_lookbook(payload: LookbookPayload, request: Request):
         "imageUrl": image_url,
         "disclaimer": "AI-generated lookbook imagery is for inspiration only."
     }
+
+UPLOAD_DIR = "uploaded_clothes"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+@app.post("/api/upload-clothing")
+async def upload_and_clean_clothing(file: UploadFile = File(...)):
+    input_image = await file.read()
+    output_image_bytes = remove(input_image)
+    image = Image.open(io.BytesIO(output_image_bytes))
+    
+    unique_filename = f"{uuid.uuid4()}.png"
+    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    image.save(file_path)
+    
+    return {"message": "Background removed successfully", "file_url": f"/{file_path}"}
+
+def get_db():
+    # Use the existing global DB_PATH for consistency
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+@app.post("/api/try-on")
+async def virtual_try_on(
+    human_image: UploadFile = File(...),
+    garment_image: UploadFile = File(...),
+    category: str = Form("upper_body"),
+    description: str = Form("a piece of clothing")
+):
+    human_path = f"temp_human_{human_image.filename}"
+    garment_path = f"temp_garm_{garment_image.filename}"
+    
+    with open(human_path, "wb") as buffer:
+        shutil.copyfileobj(human_image.file, buffer)
+    with open(garment_path, "wb") as buffer:
+        shutil.copyfileobj(garment_image.file, buffer)
+
+    try:
+        output = replicate.run(
+            "cuuupid/idm-vton:c871bb9b046607b680449ecbae55fd8c6d945e0a1948644bf2361b3d021d3ff4",
+            input={
+                "crop": False,
+                "steps": 30,
+                "category": category,
+                "garm_img": open(garment_path, "rb"),
+                "human_img": open(human_path, "rb"),
+                "garment_des": description
+            }
+        )
+        
+        os.remove(human_path)
+        os.remove(garment_path)
+        
+        return {"message": "Success", "result_url": output}
+        
+    except Exception as e:
+        if os.path.exists(human_path): os.remove(human_path)
+        if os.path.exists(garment_path): os.remove(garment_path)
+        return {"error": str(e)}
+
+@app.post("/api/planner")
+async def save_planned_outfit(plan: OutfitPlan):
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS planned_outfits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT NOT NULL,
+            outfit_id INTEGER NOT NULL,
+            description TEXT
+        )
+    ''')
+    
+    cursor.execute(
+        "INSERT INTO planned_outfits (date, outfit_id, description) VALUES (?, ?, ?)",
+        (plan.date, plan.outfit_id, plan.description)
+    )
+    db.commit()
+    db.close()
+    
+    return {"message": "Outfit planned successfully!"}
+
+@app.get("/api/planner/{month}")
+async def get_planned_outfits(month: str):
+    db = get_db()
+    cursor = db.cursor()
+    
+    cursor.execute(
+        "SELECT * FROM planned_outfits WHERE date LIKE ?", 
+        (f"{month}-%",)
+    )
+    outfits = cursor.fetchall()
+    db.close()
+    
+    return {"planned_outfits": [dict(row) for row in outfits]}
+
+@app.delete("/api/planner/{plan_id}")
+async def delete_planned_outfit(plan_id: int):
+    try:
+        db = get_db()
+        cursor = db.cursor()
+        
+        # Delete from the correct table name 'planned_outfits'
+        cursor.execute("DELETE FROM planned_outfits WHERE id = ?", (plan_id,))
+        db.commit()
+        
+        if cursor.rowcount == 0:
+            db.close()
+            return {"error": "Outfit plan not found"}
+            
+        db.close()
+        return {"message": "Outfit plan deleted successfully"}
+        
+    except Exception as e:
+        return {"error": str(e)}

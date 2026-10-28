@@ -1,52 +1,77 @@
-import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Shirt, Sparkles, Heart, Palette, Settings, WandSparkles, CalendarDays, CloudRain, Image as ImageIcon } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Home,
+  Shirt,
+  Compass,
+  CalendarDays,
+  Wand2,
+  CloudSun,
+  Image as ImageIcon,
+  Settings
+} from 'lucide-react';
 
-const NAV_ITEMS = [
-  { to: '/overview', label: 'Today', icon: LayoutDashboard },
-  { to: '/wardrobe', label: 'My wardrobe', icon: Shirt },
-  { to: '/discover', label: 'Discover', icon: Sparkles },
-  { to: '/builder', label: 'Outfit Builder', icon: WandSparkles },
-  { to: '/planner', label: 'Outfit Planner', icon: CalendarDays },
-  { to: '/weather', label: 'Weather', icon: CloudRain },
-  { to: '/lookbook', label: 'AI Lookbook', icon: ImageIcon },
-  { to: '/saved', label: 'Saved looks', icon: Heart },
-  { to: '/preferences', label: 'My style', icon: Palette },
-  { to: '/settings', label: 'Settings', icon: Settings },
-];
-
-interface SidebarProps { className?: string; onNavClick?: () => void; }
-
-export function Sidebar({ className = '', onNavClick }: SidebarProps) {
+export function ModernSidebar() {
   const location = useLocation();
+
+  const navItems = [
+    { icon: Home, label: 'Overview', path: '/overview' },
+    { icon: Shirt, label: 'Wardrobe', path: '/wardrobe' },
+    { icon: Compass, label: 'Discover', path: '/discover' },
+    { icon: CalendarDays, label: 'Planner', path: '/planner' },
+    { icon: Wand2, label: 'Try On', path: '/builder' },
+    { icon: CloudSun, label: 'Weather', path: '/weather' },
+    { icon: ImageIcon, label: 'Lookbook', path: '/lookbook' },
+  ];
+
   return (
-    <aside className={`sw-sidebar fixed top-0 left-0 h-screen w-[var(--sidebar-width)] flex flex-col z-40 ${className}`}>
-      <div className="px-7 pt-8 pb-7">
-        <NavLink to="/overview" className="sw-brand" aria-label="SmartWardrobe home">
-          <span className="sw-brand-mark"><Shirt size={16} strokeWidth={1.7} /></span>
-          <span>smartwardrobe<span className="sw-brand-period">.</span></span>
-        </NavLink>
-        <p className="sw-side-caption">Your clothes. New possibilities.</p>
+    <aside className="fixed inset-y-0 left-0 z-50 w-[80px] xl:w-[240px] flex flex-col items-center xl:items-start bg-surface border-r border-border-light py-8 transition-all duration-300">
+
+      {/* Logo Area - Optimized to fit exactly without cutting off */}
+      <div className="flex items-center gap-2.5 px-4 mb-12 w-full">
+        <div className="w-10 h-10 shrink-0 bg-ink text-white rounded-2xl flex items-center justify-center shadow-md">
+          <Shirt size={20} />
+        </div>
+        <span className="hidden xl:block font-serif text-lg text-ink font-bold tracking-tight whitespace-nowrap">
+          SmartWardrobe
+        </span>
       </div>
-      <div className="sw-side-rule mx-6" />
-      <p className="sw-side-label px-7 pt-7 pb-3">YOUR SPACE</p>
-      <nav className="flex-1 px-4 space-y-1 overflow-y-auto" aria-label="Main navigation">
-        {NAV_ITEMS.map(({ to, label, icon: Icon }) => {
-          const active = location.pathname === to || (to === '/overview' && location.pathname === '/');
-          return <NavLink key={to} to={to} onClick={onNavClick} aria-current={active ? 'page' : undefined}
-            className={`sw-nav-link ${active ? 'is-active' : ''}`}>
-            <Icon size={17} strokeWidth={1.65} /><span>{label}</span>{active && <span className="sw-nav-dot" />}
-          </NavLink>;
+
+      {/* Main Navigation */}
+      <nav className="flex-1 w-full px-3 xl:px-4 space-y-2 overflow-y-auto hide-scrollbar">
+        {navItems.map((item) => {
+          const isActive = location.pathname === item.path;
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-4 px-3 xl:px-4 py-3.5 rounded-2xl transition-all duration-200 group ${isActive
+                  ? 'bg-ink text-white shadow-md shadow-ink/10'
+                  : 'text-ink-muted hover:bg-ivory hover:text-ink'
+                }`}
+            >
+              <item.icon size={22} className={isActive ? 'text-white shrink-0' : 'text-ink-muted shrink-0 group-hover:text-ink transition-colors'} strokeWidth={isActive ? 2 : 1.5} />
+              <span className={`hidden xl:block text-sm font-medium whitespace-nowrap ${isActive ? 'text-white' : ''}`}>
+                {item.label}
+              </span>
+            </Link>
+          );
         })}
       </nav>
-      <div className="px-6 pb-6">
-        <div className="sw-side-note">
-          <span className="sw-note-spark">✳</span>
-          <p>More ways to wear<br /><em>what you already own.</em></p>
-        </div>
-        <div className="sw-profile-row mt-5">
-          <div className="sw-profile-avatar">S</div>
-          <div className="min-w-0"><p className="text-sm font-medium truncate">Your wardrobe</p><p className="text-xs sw-muted">Personal space</p></div>
-        </div>
+
+      {/* Settings Footer */}
+      <div className="w-full px-3 xl:px-4 mt-auto pt-4">
+        <Link
+          to="/settings"
+          className={`flex items-center gap-4 px-3 xl:px-4 py-3.5 rounded-2xl transition-all duration-200 group ${location.pathname === '/settings'
+              ? 'bg-ink text-white shadow-md shadow-ink/10'
+              : 'text-ink-muted hover:bg-ivory hover:text-ink'
+            }`}
+        >
+          <Settings size={22} className={location.pathname === '/settings' ? 'text-white shrink-0' : 'text-ink-muted shrink-0 group-hover:text-ink transition-colors'} strokeWidth={1.5} />
+          <span className={`hidden xl:block text-sm font-medium whitespace-nowrap ${location.pathname === '/settings' ? 'text-white' : ''}`}>
+            Settings
+          </span>
+        </Link>
       </div>
     </aside>
   );

@@ -11,9 +11,12 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "date-fns": "^4.4.0",
     "lucide-react": "^1.59.0",
     "react": "^19.2.8",
+    "react-calendar": "^6.0.1",
     "react-dom": "^19.2.8",
+    "react-dropzone": "^20.1.4",
     "react-router-dom": "^7.18.4",
     "tailwindcss": "^4.3.3"
   },
