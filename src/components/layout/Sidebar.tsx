@@ -10,7 +10,7 @@ import {
   Settings
 } from 'lucide-react';
 
-export function ModernSidebar() {
+export function Sidebar() {
   const location = useLocation();
 
   const navItems = [
