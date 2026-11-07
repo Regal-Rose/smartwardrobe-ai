@@ -6,7 +6,7 @@ import hashlib, hmac, os, secrets, sqlite3, json, uuid, shutil, io
 from contextlib import closing
 from pathlib import Path
 from typing import Optional
-from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, Request, Response, UploadFile, File, Form, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.httpsredirect import HTTPSRedirectMiddleware
 from pydantic import BaseModel, EmailStr, Field
@@ -18,6 +18,7 @@ from rembg import remove
 from PIL import Image
 from dotenv import load_dotenv
 import replicate
+import resend
 
 load_dotenv()
 
@@ -157,19 +158,48 @@ class ResetPasswordPayload(BaseModel):
     token: str
     new_password: str = Field(min_length=8, max_length=128)
 
+def send_reset_email(target_email: str, target_name: str, reset_token: str):
+    # FORCE the key to load right before sending
+    resend.api_key = os.getenv("RESEND_API_KEY")
+    
+    if not resend.api_key:
+        print("CRITICAL: Resend API key is still missing from the environment!")
+        return
+
+    reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+    
+    html_content = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #3B1011;">SmartWardrobe.</h2>
+        <p style="color: #5C1A1B;">Hi {target_name},</p>
+        <p style="color: #5C1A1B;">We received a request to reset your password. Click the secure link below to proceed:</p>
+        <a href="{reset_link}" style="display: inline-block; padding: 12px 24px; background-color: #3B1011; color: #FDFBF7; text-decoration: none; border-radius: 6px; font-weight: bold; margin-top: 10px;">Reset Password</a>
+        <p style="font-size: 12px; color: #999; margin-top: 30px;">If you didn't request this, you can safely ignore this email.</p>
+    </div>
+    """
+
+    try:
+        r = resend.Emails.send({
+            "from": "SmartWardrobe <onboarding@resend.dev>",
+            "to": target_email,
+            "subject": "SmartWardrobe - Secure Password Reset",
+            "html": html_content
+        })
+        print(f"SUCCESS: Enterprise email dispatched via Resend to {target_email}")
+    except Exception as e:
+        print(f"ERROR: Resend delivery failed - {e}")
+
 @app.post("/api/v1/auth/forgot-password")
 @limiter.limit("3/hour") 
-def forgot_password(payload: ForgotPasswordPayload, request: Request):
+def forgot_password(payload: ForgotPasswordPayload, request: Request, background_tasks: BackgroundTasks):
     email = str(payload.email).strip().lower()
     with closing(connect()) as db:
         row = db.execute("SELECT id, name FROM users WHERE email=?", (email,)).fetchone()
+    
     if row:
         reset_token = serializer.dumps(email, salt="password-reset-salt")
-        reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
-        print(f"\n{'='*50}\n[EMAIL SIMULATION]")
-        print(f"To: {email}\nSubject: Reset Your SmartWardrobe Password")
-        print(f"Hi {row['name']},\nClick here to reset your password:\n{reset_link}")
-        print(f"{'='*50}\n")
+        background_tasks.add_task(send_reset_email, email, row["name"], reset_token)
+    
     return {"message": "If that email is registered, a password reset link has been sent."}
 
 @app.post("/api/v1/auth/reset-password")
