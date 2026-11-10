@@ -1,5 +1,5 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, ChevronLeft, ChevronRight, Plus, Trash2, CalendarCheck2, Shirt, Sparkles, AlertCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { CalendarDays, ChevronLeft, ChevronRight, Trash2, CalendarCheck2, Shirt, Sparkles, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useServices } from '../app/ServiceProvider';
 import type { Outfit } from '../types';

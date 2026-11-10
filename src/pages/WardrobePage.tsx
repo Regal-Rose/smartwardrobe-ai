@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, Grid3X3, GalleryHorizontalEnd, X, SlidersHorizontal } from 'lucide-react';
 import { useWardrobe } from '../hooks/useWardrobe';
-import { Button } from '../components/ui/Button';
 
 import { Select } from '../components/ui/Select';
 import { EmptyState } from '../components/ui/EmptyState';

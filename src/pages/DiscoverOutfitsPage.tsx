@@ -1,11 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Sparkles, Heart, AlertCircle, Info, Pencil, Save, X, Compass, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Sparkles, Heart, AlertCircle, Info, Pencil, Save, X, Compass } from 'lucide-react';
 import { useServices } from '../app/ServiceProvider';
-import { Button } from '../components/ui/Button';
-import { Select } from '../components/ui/Select';
-import { Badge } from '../components/ui/Badge';
-import { EmptyState } from '../components/ui/EmptyState';
 import type { Garment, Outfit, Occasion, Season, StyleType, UserPreferences } from '../types';
 import { OCCASION_LABELS, SEASON_LABELS, STYLE_LABELS } from '../types';
 

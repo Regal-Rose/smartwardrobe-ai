@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ArrowRight, Lock, Mail, Loader2, Key } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -93,7 +93,7 @@ const garments = [
 export function LandingPage() {
   const [activeGarment, setActiveGarment] = useState(0);
   const garment = garments[activeGarment];
-  const navigate = useNavigate(); // Added navigation hook
+  const navigate = useNavigate();
 
   const scrollTo = (id: string) => {
     const el = document.getElementById(id);
