@@ -1,5 +1,5 @@
 import { type ReactNode } from 'react';
-import { ModernSidebar } from './Sidebar'; // Fixed: Changed from ../ to ./
+import { Sidebar } from './Sidebar'; // Fixed: Updated to match the new export name
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -10,7 +10,7 @@ export function AppLayout({ children }: AppLayoutProps) {
     <div className="min-h-screen bg-[#F9FAFB] text-ink font-sans flex overflow-hidden">
 
       {/* 1. The Floating Sidebar */}
-      <ModernSidebar />
+      <Sidebar />
 
       {/* 2. The Main Content Area */}
       <main className="flex-1 ml-[80px] xl:ml-[240px] p-6 lg:p-10 transition-all duration-300 w-full h-screen overflow-y-auto">

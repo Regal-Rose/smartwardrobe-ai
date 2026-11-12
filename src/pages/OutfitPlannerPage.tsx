@@ -10,6 +10,9 @@ type PlannedOutfit = { id?: number; date: string; outfit_id: number; description
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
+// FIX: Use Vercel backend URL if it exists, otherwise use localhost for local testing
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export function OutfitPlannerPage() {
   const { outfitRepo } = useServices();
   const [outfits, setOutfits] = useState<Outfit[]>([]);
@@ -41,7 +44,7 @@ export function OutfitPlannerPage() {
     const fetchPlans = async () => {
       try {
         const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-        const res = await fetch(`http://localhost:8000/api/planner/${monthStr}`);
+        const res = await fetch(`${BASE_URL}/api/planner/${monthStr}`);
         if (res.ok) {
           const data = await res.json();
           if (active) setPlans(data.planned_outfits || []);
@@ -78,7 +81,7 @@ export function OutfitPlannerPage() {
     };
 
     try {
-      const res = await fetch("http://localhost:8000/api/planner", {
+      const res = await fetch(`${BASE_URL}/api/planner`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
@@ -87,7 +90,7 @@ export function OutfitPlannerPage() {
       if (res.ok) {
         // Fetch the updated plans to ensure we have the new database ID for deletion
         const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-        const refreshRes = await fetch(`http://localhost:8000/api/planner/${monthStr}`);
+        const refreshRes = await fetch(`${BASE_URL}/api/planner/${monthStr}`);
         if (refreshRes.ok) {
           const data = await refreshRes.json();
           setPlans(data.planned_outfits || []);
@@ -108,7 +111,7 @@ export function OutfitPlannerPage() {
   const removePlan = async (plan: PlannedOutfit) => {
     if (plan.id) {
       try {
-        const response = await fetch(`http://localhost:8000/api/planner/${plan.id}`, {
+        const response = await fetch(`${BASE_URL}/api/planner/${plan.id}`, {
           method: 'DELETE',
         });
 

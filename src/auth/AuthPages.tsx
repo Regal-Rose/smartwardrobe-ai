@@ -3,9 +3,12 @@ import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-// --- SHARED AUTH LOGIC (DO NOT CHANGE) ---
+// --- SHARED AUTH LOGIC ---
 axios.defaults.withCredentials = true;
-const API_URL = 'http://localhost:8000/api/v1';
+
+// FIX: Use Vercel backend URL if it exists, otherwise use localhost for local testing
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_URL = `${BASE_URL}/api/v1`;
 
 export const checkSession = async () => {
   try {
