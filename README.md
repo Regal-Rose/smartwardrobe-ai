@@ -1,41 +1,97 @@
 # SmartWardrobe AI
 
-**Your wardrobe, reimagined.** SmartWardrobe AI is a full-stack digital closet and outfit-planning application that helps users organise clothing they already own, explore combinations, save outfits, and understand wardrobe usage. It supports **Indian, Western, and fusion** fashion rather than treating ethnic wear as an afterthought.
+**Your wardrobe, reimagined.** SmartWardrobe AI is a full-stack digital closet and outfit-planning application that helps users organise clothing they already own, explore combinations, save outfits, and understand wardrobe usage. It supports **Indian, Western, and Fusion** fashion — treating ethnic wear as a first-class citizen, not an afterthought.
 
-> **Project status:** Working university-project prototype. The frontend and backend are implemented for local development. This repository does not claim a production deployment, a trained outfit-recommendation model, or virtual try-on.
+> **Project status:** Working university-project prototype. The frontend and backend are fully implemented for local development. This repository does not claim a production deployment or a trained outfit-recommendation model.
 
-## Features
+---
 
-- **Accounts and privacy:** Registration, login, logout, password-reset endpoints, protected routes, and account-scoped wardrobe data.
-- **Digital wardrobe:** Add, browse, search, filter, edit, and remove garments, with image handling and garment metadata.
-- **Two wardrobe views:** Editorial-style **clothing rail** and practical **grid** view.
-- **Outfit discovery:** Generate wardrobe-based suggestions using compatibility logic and user selections.
-- **Outfit management:** Save outfits, mark favourites, and access saved looks.
-- **Personalisation:** Store and update style preferences and provide outfit feedback.
-- **Wear tracking and analytics:** Record outfit wears, view wear history, and explore wardrobe/activity analytics.
-- **Additional experiences:** Outfit builder, outfit planner, weather suggestions, and lookbook screens.
+## ✨ Features
 
-Some features depend on backend configuration, user data, and external service availability. Outfit recommendations are **rule-based**, not a claim of a trained machine-learning model.
+### Accounts & Privacy
+- Registration, login, logout with secure password hashing (PBKDF2-SHA256).
+- Password reset flow via email (Resend integration).
+- Signed HttpOnly session cookies with configurable security.
+- Account-scoped wardrobe data — each user sees only their own items.
 
-## Tech stack
+### Digital Wardrobe
+- Add, browse, search, filter, edit, and remove garments with rich metadata (category, subcategory, style, colour, season, occasions, tags, notes).
+- **8 garment categories:** Tops, Bottoms, Dresses, Indian Ethnic, Fusion, Footwear, Accessories, Outerwear — with 50+ subcategories including kurtas, sarees, lehengas, juttis, kolhapuris, and more.
+- **Two wardrobe views:** editorial-style *Clothing Rail* and practical *Grid* view.
+
+### AI-Powered Image Processing
+- **Background removal** on uploaded garment photos using `rembg` (ONNX-based, runs locally).
+- Drag-and-drop image upload with instant clean output.
+
+### Virtual Try-On *(experimental)*
+- Upload a human photo and a garment image to preview how clothes look on you, powered by Replicate's IDM-VTON model.
+
+### Outfit Discovery & Recommendations
+- Rule-based outfit generation using garment compatibility logic, colour harmony scoring, and season/occasion filtering.
+- Recommendations personalised by user preferences and feedback history.
+- Supports Indian ethnic pairing logic (e.g. kurta + churidar + matching dupatta).
+
+### Outfit Management
+- Save, browse, and delete outfits.
+- Mark outfits as favourites.
+- Record when you wore an outfit and add notes.
+- Like/dislike feedback that influences future recommendations.
+
+### Outfit Planner
+- Calendar-based outfit planning — assign saved looks to specific dates.
+- Browse and manage planned outfits by month.
+
+### Weather-Aware Suggestions
+- Location-based live weather data from Open-Meteo (free, no API key required).
+- Automatic season detection from temperature.
+- Wardrobe-filtered clothing suggestions matching the current weather.
+
+### AI Lookbook
+- Generate fashion-editorial inspiration images from text prompts using Pollinations AI.
+- Customise by occasion and style.
+
+### Dashboard & Analytics
+- **Overview dashboard** with wardrobe stats, live weather widget, and quick-action links.
+- **Wardrobe analytics:** garment counts by category, style, and colour.
+- **Activity analytics:** recent wears, feedback history, and favourite trends.
+
+### Style Personalisation
+- Set preferred styles, favourite colours, common occasions, seasonal preferences, and preferred categories.
+- Preferences feed into the recommendation engine.
+
+---
+
+## 🛠 Tech Stack
 
 | Layer | Technology |
 | --- | --- |
-| Frontend | React 19, TypeScript, Vite 8 |
-| Styling | Tailwind CSS 4, Lucide React |
-| Routing | React Router 7 |
-| Backend | Python, FastAPI, Uvicorn |
-| Database | SQLite for the current local prototype |
-| Authentication | Password hashing and signed HttpOnly session cookies |
-| API | REST endpoints under `/api/v1` |
-| Backend tests | Pytest-based tests in `backend/tests/` |
+| **Frontend** | React 19, TypeScript 6, Vite 8 |
+| **Styling** | Tailwind CSS 4, Lucide React icons |
+| **Routing** | React Router 7 |
+| **HTTP Client** | Custom fetch-based API client with typed error handling |
+| **Drag & Drop** | react-dropzone |
+| **Calendar** | react-calendar |
+| **Date Utilities** | date-fns |
+| **Backend** | Python, FastAPI, Uvicorn |
+| **Database** | SQLite (local prototype) |
+| **Auth** | PBKDF2-SHA256 hashing, itsdangerous signed sessions |
+| **Rate Limiting** | slowapi |
+| **Image Processing** | rembg (background removal), Pillow |
+| **Virtual Try-On** | Replicate API (IDM-VTON model) |
+| **Email** | Resend (password reset emails) |
+| **Weather** | Open-Meteo API (free, no key required) |
+| **Lookbook** | Pollinations AI (image generation) |
+| **Linting** | oxlint |
+| **Backend Tests** | Pytest + httpx |
 
-## Getting started
+---
+
+## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js and npm compatible with the project's Vite version
-- Python 3 with `venv` support
+- **Node.js** and **npm** (compatible with Vite 8)
+- **Python 3.10+** with `venv` support
 
 ### 1. Clone and install the frontend
 
@@ -52,57 +108,83 @@ Create the frontend environment file:
 Copy-Item .env.example .env.local
 ```
 
-**macOS/Linux:**
+**macOS / Linux:**
 ```bash
 cp .env.example .env.local
 ```
 
-Example frontend settings:
+Default frontend settings (`.env.local`):
 
 ```dotenv
 VITE_API_BASE_URL=http://localhost:8000
 VITE_DATA_MODE=http
 ```
 
-`http` uses the FastAPI service. Set `VITE_DATA_MODE=mock` only when intentionally exploring local demo data; it is not a substitute for authenticated account storage.
+> `http` connects to the FastAPI backend. Set `VITE_DATA_MODE=mock` only when intentionally exploring local demo data — it is not a substitute for authenticated account storage.
 
 ### 2. Set up and run the backend
 
-Open a **second terminal**:
+Open a **second terminal:**
 
 ```bash
 cd backend
-python -m venv .venv
+python -m venv venv
 ```
 
-Activate the environment:
+Activate the virtual environment:
 
 **Windows PowerShell:**
 ```powershell
-.\.venv\Scripts\Activate.ps1
+.\venv\Scripts\Activate.ps1
 ```
 
-**macOS/Linux:**
+**macOS / Linux:**
 ```bash
-source .venv/bin/activate
+source venv/bin/activate
 ```
 
 Install dependencies:
 
 ```bash
-python -m pip install -r requirements.txt
+pip install -r requirements.txt
 ```
 
-Copy `backend/.env.example` to `backend/.env`, then replace `SMARTWARDROBE_SECRET` with a long, unique secret. The example also configures the SQLite database path, frontend origins, and cookie security settings.
+Copy the environment file and configure your secrets:
 
-Start the API from the `backend` directory:
+**PowerShell:**
+```powershell
+Copy-Item .env.example .env
+```
+
+**macOS / Linux:**
+```bash
+cp .env.example .env
+```
+
+Edit `backend/.env` — at minimum, replace `SMARTWARDROBE_SECRET` with a long, unique secret:
+
+```dotenv
+SMARTWARDROBE_SECRET=replace-with-a-long-random-secret
+SMARTWARDROBE_DB=./smartwardrobe.db
+FRONTEND_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+COOKIE_SECURE=false
+```
+
+**Optional keys** (features degrade gracefully without these):
+
+| Variable | Purpose |
+| --- | --- |
+| `RESEND_API_KEY` | Password-reset emails via Resend |
+| `REPLICATE_API_TOKEN` | Virtual try-on via Replicate |
+
+Start the API:
 
 ```bash
-python -m uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --port 8000
 ```
 
-API health check: `http://localhost:8000/api/health`  
-Interactive API documentation: `http://localhost:8000/docs`
+- Health check: http://localhost:8000/api/health
+- Interactive API docs: http://localhost:8000/docs
 
 ### 3. Start the frontend
 
@@ -112,99 +194,175 @@ Back in the project root:
 npm run dev
 ```
 
-Open the local URL printed by Vite (typically `http://localhost:5173`). Register or log in, then use the wardrobe and outfit features.
+Open the URL printed by Vite (typically http://localhost:5173). Register or log in to start using the app.
 
-## Main application areas
+---
 
-| Area | Purpose |
+## 📱 Application Areas
+
+| Area | Route | Purpose |
+| --- | --- | --- |
+| **Overview** | `/overview` | Dashboard with wardrobe stats, weather, and quick actions |
+| **Wardrobe** | `/wardrobe` | Rail/grid browsing, garment details, add/edit/delete |
+| **Discover Outfits** | `/discover` | Rule-based outfit recommendations from your wardrobe |
+| **Outfit Builder** | `/builder` | Compose and try on looks (virtual try-on) |
+| **Outfit Planner** | `/planner` | Calendar-based outfit planning |
+| **Saved Outfits** | `/saved` | Manage saved outfit combinations |
+| **Weather** | `/weather` | Live weather-aware clothing suggestions |
+| **Lookbook** | `/lookbook` | AI-generated fashion editorial imagery |
+| **Upload** | `/upload` | Drag-and-drop garment upload with background removal |
+| **Preferences** | `/preferences` | Set style, colour, occasion, and season preferences |
+| **Settings** | `/settings` | Account and app settings |
+
+---
+
+## 📡 API Overview
+
+The FastAPI backend exposes these route groups (full schemas at `/docs`):
+
+| Group | Routes |
 | --- | --- |
-| Overview | Wardrobe snapshot and activity overview |
-| My Wardrobe | Rail/grid browsing, garment details and management |
-| Discover Outfits | Wardrobe-based outfit suggestions |
-| Outfit Builder / Planner | Compose and plan looks |
-| Saved Outfits | Manage saved combinations |
-| Preferences / Settings | Personalise style and account experience |
-| Weather Suggestions | Weather-related outfit guidance |
-| Lookbook | Explore a curated presentation of looks |
+| **Health** | `GET /api/health` |
+| **Auth** | `POST /api/v1/auth/register`, `/login`, `/logout`, `/forgot-password`, `/reset-password` · `GET /api/v1/auth/me` |
+| **Garments** | `GET/POST /api/v1/garments` · `GET/PATCH/DELETE /api/v1/garments/{id}` |
+| **Outfits** | `GET/POST /api/v1/outfits` · `GET/DELETE /api/v1/outfits/{id}` |
+| **Recommendations** | `POST /api/v1/recommendations` |
+| **Preferences** | `GET/PUT /api/v1/preferences` |
+| **Favourites** | `GET /api/v1/favorites` · `PUT/DELETE /api/v1/favorites/{id}` |
+| **Wear Tracking** | `POST /api/v1/outfits/{id}/wear` · `GET /api/v1/wear-history` |
+| **Feedback** | `POST/GET /api/v1/outfits/{id}/feedback` |
+| **Analytics** | `GET /api/v1/analytics/wardrobe` · `GET /api/v1/analytics/activity` |
+| **Weather** | `GET /api/v1/weather?lat=…&lon=…` |
+| **Lookbook** | `POST /api/v1/lookbook` |
+| **Upload** | `POST /api/upload-clothing` |
+| **Try-On** | `POST /api/try-on` |
+| **Planner** | `POST /api/planner` · `GET /api/planner/{month}` · `DELETE /api/planner/{id}` |
 
-## API overview
+All authenticated endpoints require a valid session cookie. The backend owns access control and data persistence — the frontend never connects directly to the database.
 
-The FastAPI backend exposes the following route groups (see `/docs` for request and response schemas):
+---
 
-| Group | Representative routes |
-| --- | --- |
-| Health | `GET /api/health` |
-| Authentication | `/api/v1/auth/register`, `/login`, `/me`, `/logout`, `/forgot-password`, `/reset-password` |
-| Garments | `GET/POST /api/v1/garments`, `GET/PATCH/DELETE /api/v1/garments/{garment_id}` |
-| Outfits | `GET/POST /api/v1/outfits`, `GET/DELETE /api/v1/outfits/{outfit_id}` |
-| Recommendations | `POST /api/v1/recommendations` |
-| Preferences | `GET/PUT /api/v1/preferences` |
-| Favourites | `GET /api/v1/favorites`, `PUT/DELETE /api/v1/favorites/{outfit_id}` |
-| Wear and feedback | `POST /api/v1/outfits/{outfit_id}/wear`, `GET /api/v1/wear-history`, outfit feedback routes |
-| Analytics | `GET /api/v1/analytics/wardrobe`, `GET /api/v1/analytics/activity` |
-| Other | `GET /api/v1/weather`, `POST /api/v1/lookbook` |
-
-API endpoints require authentication where applicable. The backend owns access control and data persistence; the frontend does not connect directly to the database.
-
-## Project layout
+## 📂 Project Layout
 
 ```text
 smartwardrobe-ai/
-├── public/                 # Public assets
+├── public/                        # Static assets (favicon, icons)
 ├── src/
-│   ├── app/                # Application setup
-│   ├── assets/             # Frontend assets
-│   ├── components/         # Reusable interface components
-│   ├── hooks/              # React hooks
-│   ├── pages/              # Application screens
-│   ├── services/           # Data access and integrations
-│   ├── types/              # TypeScript types
-│   ├── App.tsx
+│   ├── app/
+│   │   └── ServiceProvider.tsx    # DI / repository wiring
+│   ├── assets/                    # Images (hero, logos)
+│   ├── auth/
+│   │   ├── AuthPages.tsx          # Login, register, landing, session check
+│   │   ├── ForgotPasswordPage.tsx
+│   │   └── ResetPasswordPage.tsx
+│   ├── components/
+│   │   ├── layout/
+│   │   │   ├── AppLayout.tsx      # Sidebar + header shell
+│   │   │   ├── Header.tsx
+│   │   │   ├── MobileNav.tsx
+│   │   │   └── Sidebar.tsx
+│   │   ├── ui/                    # Reusable UI primitives (Button, Modal, Badge, etc.)
+│   │   ├── wardrobe/              # Garment grid, rail, detail, edit, add modal
+│   │   └── UploadClothing.tsx     # Drag-and-drop upload with background removal
+│   ├── hooks/
+│   │   ├── useTheme.ts
+│   │   └── useWardrobe.ts
+│   ├── pages/                     # All application screens
+│   │   ├── DashboardOverview.tsx
+│   │   ├── WardrobePage.tsx
+│   │   ├── DiscoverOutfitsPage.tsx
+│   │   ├── OutfitBuilderPage.tsx
+│   │   ├── OutfitPlannerPage.tsx
+│   │   ├── SavedOutfitsPage.tsx
+│   │   ├── WeatherSuggestionsPage.tsx
+│   │   ├── LookbookPage.tsx
+│   │   ├── PreferencesPage.tsx
+│   │   ├── SettingsPage.tsx
+│   │   └── NotFoundPage.tsx
+│   ├── services/
+│   │   ├── api/
+│   │   │   ├── client.ts          # Typed fetch wrapper
+│   │   │   └── endpoints.ts      # Endpoint constants
+│   │   └── repositories/
+│   │       ├── interfaces.ts      # Repository contracts
+│   │       ├── HttpGarmentRepository.ts
+│   │       ├── HttpOutfitRepository.ts
+│   │       ├── HttpPreferencesRepository.ts
+│   │       └── mock/              # Mock implementations for offline dev
+│   ├── types/
+│   │   └── index.ts               # All TypeScript types, enums, and display constants
+│   ├── App.tsx                    # Route definitions + protected area logic
+│   ├── index.css
 │   └── main.tsx
 ├── backend/
-│   ├── main.py             # FastAPI application and endpoints
+│   ├── main.py                    # FastAPI application (all endpoints)
 │   ├── requirements.txt
-│   ├── tests/              # Backend tests
+│   ├── .env.example
+│   ├── uploaded_clothes/          # Processed garment images
+│   ├── tests/
+│   │   ├── test_account_isolation.py
+│   │   └── test_extended_features.py
 │   └── README.md
 ├── .env.example
 ├── package.json
+├── vite.config.ts
+├── tsconfig.json
 └── README.md
 ```
 
-## Quality checks
+---
 
-Frontend (project root):
+## ✅ Quality Checks
 
-```bash
-npm run lint
-npm run build
-```
-
-Backend (with dependencies installed, from `backend/`):
+**Frontend** (from project root):
 
 ```bash
-python -m pip install pytest httpx
-python -m pytest tests -v
+npm run lint     # oxlint
+npm run build    # TypeScript + Vite production build
 ```
 
-These commands are provided for local verification; this README does not assert a particular test result or coverage percentage.
+**Backend** (from `backend/` with venv activated):
 
-## Security and limitations
+```bash
+pip install pytest httpx
+pytest tests -v
+```
 
-- Passwords are hashed; the backend uses signed HttpOnly session cookies.
-- API operations should be accessed only through authorised user sessions.
-- Configure a strong `SMARTWARDROBE_SECRET`, appropriate CORS origins, HTTPS, and `COOKIE_SECURE=true` for HTTPS deployment.
-- Do not commit `.env` files, secrets, user databases, or personal garment images.
-- The local prototype uses **SQLite**. Uploaded garment images may be stored as data URLs in the database; this is not an ideal production media-storage architecture.
-- Weather features may require external connectivity and/or permission to access location.
-- The application has not been presented here as independently security-audited or production-hardened.
-- **Azure deployment, trained AI image classification, and virtual try-on are not claimed as implemented** by this README.
+---
 
-## Academic context
+## 🔒 Security & Limitations
 
-SmartWardrobe AI demonstrates frontend/backend integration, relational data persistence, account-aware data access, wardrobe and outfit management, rule-based recommendations, and analytics. The project is designed to be extensible to cloud storage, more advanced recommendation models, and richer personalisation.
+- Passwords are hashed with PBKDF2-SHA256 (310,000 iterations).
+- Session cookies are signed, HttpOnly, SameSite=Strict.
+- Rate limiting on login (10/min), password reset (3/hour), weather (10/min), and lookbook (30/hour).
+- Payload size capped at 100 MB.
+- HTTPS redirect middleware activates automatically in production (`ENVIRONMENT=production`).
+- Configure a strong `SMARTWARDROBE_SECRET`, appropriate `FRONTEND_ORIGINS`, and `COOKIE_SECURE=true` for any non-local deployment.
+- Do **not** commit `.env` files, secrets, user databases, or personal garment images.
+- The local prototype uses **SQLite** — not recommended for production concurrency.
+- Virtual try-on requires a Replicate API token and external network access.
+- Weather features require location permission in the browser and outbound connectivity to Open-Meteo.
+- The application has not been independently security-audited or production-hardened.
 
-## Repository
+---
+
+## 🏗 Architecture Highlights
+
+- **Repository pattern** — `GarmentRepository`, `OutfitRepository`, and `PreferencesRepository` interfaces allow swapping between HTTP and mock data backends.
+- **Service provider** — centralised DI via `ServiceProvider.tsx` based on `VITE_DATA_MODE`.
+- **Typed API client** — custom fetch wrapper with generic error handling, multipart upload support, and credential forwarding.
+- **Comprehensive type system** — 348 lines of TypeScript types covering every garment category, subcategory, colour (27 colours + hex map), occasion (10 types), style, season, and UI display helpers.
+- **Rule-based recommendation engine** — garment compatibility matrix, colour harmony scoring, dupatta pairing, preference weighting, and feedback loop.
+
+---
+
+## 🎓 Academic Context
+
+SmartWardrobe AI demonstrates frontend/backend integration, relational data persistence, account-aware data access, wardrobe and outfit management, AI-powered image processing, rule-based recommendations, live API consumption (weather), and analytics. The project is designed to be extensible to cloud storage, advanced recommendation models, and richer personalisation.
+
+---
+
+## 📦 Repository
 
 [GitHub — SmartWardrobe AI](https://github.com/Regal-Rose/smartwardrobe-ai)
 
