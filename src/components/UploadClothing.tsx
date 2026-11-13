@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 export default function UploadClothing() {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
   const [uploading, setUploading] = useState(false);
   const [cleanImageUrl, setCleanImageUrl] = useState<string | null>(null);

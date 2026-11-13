@@ -52,6 +52,7 @@ ENVIRONMENT = os.getenv("ENVIRONMENT", "development")
 
 # In production, cookies MUST be secure. Locally, they can be false for testing.
 COOKIE_SECURE = True if ENVIRONMENT == "production" else os.getenv("COOKIE_SECURE", "false").lower() == "true"
+COOKIE_SAMESITE = "none" if COOKIE_SECURE else "lax"
 COOKIE_NAME = "sw_session"
 SESSION_MAX_AGE = 60 * 60 * 24 * 7
 serializer = URLSafeTimedSerializer(SECRET_KEY, salt="smartwardrobe-session-v1")
@@ -62,7 +63,14 @@ app = FastAPI(title="SmartWardrobe AI API", version="0.1.0")
 if ENVIRONMENT == "production":
     app.add_middleware(HTTPSRedirectMiddleware)
 
-app.add_middleware(CORSMiddleware, allow_origins=FRONTEND_ORIGINS, allow_credentials=True, allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"], allow_headers=["Content-Type"])
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=FRONTEND_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # --- START SECURITY MIDDLEWARE ---
 # 1. Initialize Rate Limiter
@@ -127,7 +135,7 @@ def user_from_request(request: Request):
         return dict(row) if row else None
 
 def set_session(response: Response, user_id: int):
-    response.set_cookie(COOKIE_NAME, serializer.dumps(user_id), max_age=SESSION_MAX_AGE, httponly=True, secure=COOKIE_SECURE, samesite="strict", path="/")
+    response.set_cookie(COOKIE_NAME, serializer.dumps(user_id), max_age=SESSION_MAX_AGE, httponly=True, secure=COOKIE_SECURE, samesite=COOKIE_SAMESITE, path="/")
 
 @app.on_event("startup")
 def startup(): init_db()
@@ -164,7 +172,7 @@ def me(request: Request):
 
 @app.post("/api/v1/auth/logout")
 def logout(response: Response):
-    response.delete_cookie(COOKIE_NAME, path="/", httponly=True, secure=COOKIE_SECURE, samesite="lax")
+    response.delete_cookie(COOKIE_NAME, path="/", httponly=True, secure=COOKIE_SECURE, samesite=COOKIE_SAMESITE)
     return {"status": "logged_out"}
 
 class ForgotPasswordPayload(BaseModel):
@@ -186,7 +194,8 @@ def send_reset_email(target_email: str, target_name: str, reset_token: str):
         print("CRITICAL: Resend API key is still missing from the environment!")
         return
 
-    reset_link = f"http://localhost:5173/reset-password?token={reset_token}"
+    frontend_url = os.getenv("FRONTEND_URL", FRONTEND_ORIGINS[0] if FRONTEND_ORIGINS else "http://localhost:5173").rstrip("/")
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
     
     html_content = f"""
     <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">

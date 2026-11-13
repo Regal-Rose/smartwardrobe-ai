@@ -35,7 +35,7 @@ interface WeatherData {
   };
 }
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export function WeatherSuggestionsPage() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);

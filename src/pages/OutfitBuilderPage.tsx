@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, User, Shirt, Wand2, Loader2, RefreshCcw, Grid, X } from 'lucide-react';
 
 export function OutfitBuilderPage() {
-  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+  const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
   const [personFile, setPersonFile] = useState<File | null>(null);
   const [garmentFile, setGarmentFile] = useState<File | null>(null);

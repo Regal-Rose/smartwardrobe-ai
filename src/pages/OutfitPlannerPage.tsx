@@ -11,7 +11,7 @@ const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'Jul
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 
 // FIX: Use Vercel backend URL if it exists, otherwise use localhost for local testing
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 
 export function OutfitPlannerPage() {
   const { outfitRepo } = useServices();

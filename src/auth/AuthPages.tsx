@@ -7,7 +7,7 @@ import axios from 'axios';
 axios.defaults.withCredentials = true;
 
 // FIX: Use Vercel backend URL if it exists, otherwise use localhost for local testing
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
 const API_URL = `${BASE_URL}/api/v1`;
 
 export const checkSession = async () => {
