@@ -84,6 +84,26 @@
 | **Linting** | oxlint |
 | **Backend Tests** | Pytest + httpx |
 
+## 📁 Project Structure
+
+```
+smartwardrobe-ai/
+├── frontend/               # React 19 + TypeScript + Vite + Tailwind CSS
+│   ├── src/                # UI components, pages, hooks, services
+│   ├── public/             # Static assets & icons
+│   ├── package.json        # Frontend dependencies & build scripts
+│   ├── vite.config.ts      # Vite configuration
+│   └── vercel.json         # Vercel deployment configuration
+├── backend/                # FastAPI + SQLite + Python service
+│   ├── main.py             # FastAPI app, API routes, SQLite models
+│   ├── requirements.txt    # Python dependencies
+│   └── tests/              # Backend pytest regression tests
+├── docs/                   # Milestone notes & architecture specifications
+├── vercel.json             # Root Vercel deployment configuration
+├── package.json            # Monorepo convenience scripts (npm run dev/build)
+└── README.md
+```
+
 ---
 
 ## 🚀 Getting Started
@@ -97,7 +117,7 @@
 
 ```bash
 git clone https://github.com/Regal-Rose/smartwardrobe-ai.git
-cd smartwardrobe-ai
+cd smartwardrobe-ai/frontend
 npm install
 ```
 
