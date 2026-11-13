@@ -57,3 +57,35 @@ def test_extended_endpoints_are_account_scoped(tmp_path, monkeypatch):
         assert b.post(f"/api/v1/outfits/{oid}/wear",json={}).status_code == 404
         assert b.post(f"/api/v1/outfits/{oid}/feedback",json={"feedback":"like"}).status_code == 404
         assert b.get("/api/v1/analytics/wardrobe").json()["totalGarments"] == 0
+
+
+def test_planner_endpoints_are_account_scoped(tmp_path, monkeypatch):
+    monkeypatch.setattr(main, "DB_PATH", tmp_path / "planner.db")
+    main.init_db()
+    with TestClient(main.app) as a, TestClient(main.app) as b:
+        register(a, "Planner User A", "plan_a@example.com")
+        register(b, "Planner User B", "plan_b@example.com")
+
+        # User A plans an outfit
+        res_a = a.post("/api/planner", json={"date": "2026-11-13", "outfit_id": "outfit-abc123", "description": "Friday casual"})
+        assert res_a.status_code == 200, res_a.text
+        plan_id = res_a.json()["id"]
+
+        # User A retrieves plans for the month
+        plans_a = a.get("/api/planner/2026-11").json()["planned_outfits"]
+        assert len(plans_a) == 1
+        assert plans_a[0]["outfit_id"] == "outfit-abc123"
+        assert plans_a[0]["description"] == "Friday casual"
+
+        # User B cannot see User A's plan
+        plans_b = b.get("/api/planner/2026-11").json()["planned_outfits"]
+        assert len(plans_b) == 0
+
+        # User B cannot delete User A's plan
+        del_b = b.delete(f"/api/planner/{plan_id}")
+        assert del_b.status_code == 404
+
+        # User A deletes the plan
+        del_a = a.delete(f"/api/planner/{plan_id}")
+        assert del_a.status_code == 200
+        assert len(a.get("/api/planner/2026-11").json()["planned_outfits"]) == 0

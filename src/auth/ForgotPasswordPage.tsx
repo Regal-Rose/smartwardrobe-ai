@@ -3,6 +3,8 @@ import { Mail, Loader2, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/$/, '');
+
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -15,8 +17,8 @@ export function ForgotPasswordPage() {
     setIsLoading(true);
 
     try {
-      // Replace with your actual backend endpoint for password recovery
-      await axios.post('http://localhost:8000/api/v1/auth/forgot-password', { email });
+      // Send password recovery request
+      await axios.post(`${BASE_URL}/api/v1/auth/forgot-password`, { email });
       setIsSubmitted(true);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to send reset link. Please try again.');

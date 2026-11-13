@@ -14,18 +14,34 @@ from itsdangerous import BadSignature, URLSafeTimedSerializer
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from rembg import remove
-from PIL import Image
 from dotenv import load_dotenv
-import replicate
-import resend
+
+try:
+    from rembg import remove
+except ImportError:
+    remove = None
+
+try:
+    from PIL import Image
+except ImportError:
+    Image = None
+
+try:
+    import replicate
+except ImportError:
+    replicate = None
+
+try:
+    import resend
+except ImportError:
+    resend = None
 
 load_dotenv()
 
 class OutfitPlan(BaseModel):
     date: str          # Format: 'YYYY-MM-DD'
-    outfit_id: int     # The ID of the saved look
-    description: str   # E.g., "Casual Tuesday"
+    outfit_id: str     # The ID of the saved look
+    description: str = ""   # E.g., "Casual Tuesday"
 
 ROOT = Path(__file__).resolve().parent
 DB_PATH = Path(os.getenv("SMARTWARDROBE_DB", str(ROOT / "smartwardrobe.db")))
@@ -159,6 +175,10 @@ class ResetPasswordPayload(BaseModel):
     new_password: str = Field(min_length=8, max_length=128)
 
 def send_reset_email(target_email: str, target_name: str, reset_token: str):
+    if not resend:
+        print("INFO: Resend package is not installed; password reset email skipped.")
+        return
+
     # FORCE the key to load right before sending
     resend.api_key = os.getenv("RESEND_API_KEY")
     
@@ -419,7 +439,16 @@ def _ensure_extended_tables(db):
         user_id INTEGER NOT NULL, outfit_id TEXT NOT NULL, feedback TEXT NOT NULL,
         updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY(user_id, outfit_id), FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)""")
+    db.execute("""CREATE TABLE IF NOT EXISTS planned_outfits (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL DEFAULT 1,
+        date TEXT NOT NULL, outfit_id TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
+        FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE)""")
+    cols = [col[1] for col in db.execute("PRAGMA table_info(planned_outfits)").fetchall()]
+    if cols and "user_id" not in cols:
+        try: db.execute("ALTER TABLE planned_outfits ADD COLUMN user_id INTEGER NOT NULL DEFAULT 1")
+        except Exception: pass
     db.execute("CREATE INDEX IF NOT EXISTS idx_wear_user_date ON outfit_wear_events(user_id, worn_at)")
+    db.execute("CREATE INDEX IF NOT EXISTS idx_planned_user_date ON planned_outfits(user_id, date)")
     db.commit()
 
 @app.on_event("startup")
@@ -697,6 +726,8 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @app.post("/api/upload-clothing")
 async def upload_and_clean_clothing(file: UploadFile = File(...)):
+    if not remove or not Image:
+        raise HTTPException(503, "Background removal service requires 'rembg' and 'Pillow' packages to be installed.")
     input_image = await file.read()
     output_image_bytes = remove(input_image)
     image = Image.open(io.BytesIO(output_image_bytes))
@@ -720,6 +751,9 @@ async def virtual_try_on(
     category: str = Form("upper_body"),
     description: str = Form("a piece of clothing")
 ):
+    if not replicate:
+        return {"error": "Virtual try-on requires 'replicate' package and REPLICATE_API_TOKEN."}
+
     human_path = f"temp_human_{human_image.filename}"
     garment_path = f"temp_garm_{garment_image.filename}"
     
@@ -752,58 +786,33 @@ async def virtual_try_on(
         return {"error": str(e)}
 
 @app.post("/api/planner")
-async def save_planned_outfit(plan: OutfitPlan):
-    db = get_db()
-    cursor = db.cursor()
-    
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS planned_outfits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            date TEXT NOT NULL,
-            outfit_id INTEGER NOT NULL,
-            description TEXT
+def save_planned_outfit(plan: OutfitPlan, request: Request):
+    user = require_user(request)
+    with closing(connect()) as db:
+        cur = db.execute(
+            "INSERT INTO planned_outfits (user_id, date, outfit_id, description) VALUES (?, ?, ?, ?)",
+            (user["id"], plan.date, str(plan.outfit_id), plan.description or "")
         )
-    ''')
-    
-    cursor.execute(
-        "INSERT INTO planned_outfits (date, outfit_id, description) VALUES (?, ?, ?)",
-        (plan.date, plan.outfit_id, plan.description)
-    )
-    db.commit()
-    db.close()
-    
-    return {"message": "Outfit planned successfully!"}
+        db.commit()
+        plan_id = cur.lastrowid
+    return {"message": "Outfit planned successfully!", "id": plan_id}
 
 @app.get("/api/planner/{month}")
-async def get_planned_outfits(month: str):
-    db = get_db()
-    cursor = db.cursor()
-    
-    cursor.execute(
-        "SELECT * FROM planned_outfits WHERE date LIKE ?", 
-        (f"{month}-%",)
-    )
-    outfits = cursor.fetchall()
-    db.close()
-    
+def get_planned_outfits(month: str, request: Request):
+    user = require_user(request)
+    with closing(connect()) as db:
+        outfits = db.execute(
+            "SELECT id, user_id, date, outfit_id, description FROM planned_outfits WHERE user_id = ? AND date LIKE ?", 
+            (user["id"], f"{month}-%")
+        ).fetchall()
     return {"planned_outfits": [dict(row) for row in outfits]}
 
 @app.delete("/api/planner/{plan_id}")
-async def delete_planned_outfit(plan_id: int):
-    try:
-        db = get_db()
-        cursor = db.cursor()
-        
-        # Delete from the correct table name 'planned_outfits'
-        cursor.execute("DELETE FROM planned_outfits WHERE id = ?", (plan_id,))
+def delete_planned_outfit(plan_id: int, request: Request):
+    user = require_user(request)
+    with closing(connect()) as db:
+        cur = db.execute("DELETE FROM planned_outfits WHERE id = ? AND user_id = ?", (plan_id, user["id"]))
         db.commit()
-        
-        if cursor.rowcount == 0:
-            db.close()
-            return {"error": "Outfit plan not found"}
-            
-        db.close()
-        return {"message": "Outfit plan deleted successfully"}
-        
-    except Exception as e:
-        return {"error": str(e)}
+        if cur.rowcount == 0:
+            raise HTTPException(404, "Outfit plan not found")
+    return {"message": "Outfit plan deleted successfully"}

@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Sparkles, Image as ImageIcon, Loader2, Download, RefreshCcw, BookOpen } from 'lucide-react';
 
 export function LookbookPage() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
   const [prompt, setPrompt] = useState("");
   const [occasion, setOccasion] = useState("casual");
   const [style, setStyle] = useState("western");
@@ -20,8 +22,9 @@ export function LookbookPage() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8000/api/v1/lookbook", {
+      const response = await fetch(`${BASE_URL}/api/v1/lookbook`, {
         method: "POST",
+        credentials: "include",
         headers: {
           "Content-Type": "application/json",
         },
@@ -39,7 +42,7 @@ export function LookbookPage() {
       } else {
         setError(data.error || "Failed to generate image.");
       }
-    } catch (err) {
+    } catch {
       setError("Could not connect to the backend server.");
     } finally {
       setIsLoading(false);

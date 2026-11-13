@@ -5,7 +5,7 @@ import { useServices } from '../app/ServiceProvider';
 import type { Outfit } from '../types';
 
 // Updated to match your FastAPI Pydantic backend model
-type PlannedOutfit = { id?: number; date: string; outfit_id: number; description: string };
+type PlannedOutfit = { id?: number; date: string; outfit_id: string | number; description: string };
 
 const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const dateKey = (date: Date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -44,7 +44,9 @@ export function OutfitPlannerPage() {
     const fetchPlans = async () => {
       try {
         const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-        const res = await fetch(`${BASE_URL}/api/planner/${monthStr}`);
+        const res = await fetch(`${BASE_URL}/api/planner/${monthStr}`, {
+          credentials: "include"
+        });
         if (res.ok) {
           const data = await res.json();
           if (active) setPlans(data.planned_outfits || []);
@@ -76,13 +78,14 @@ export function OutfitPlannerPage() {
 
     const payload = {
       date: selectedDate,
-      outfit_id: parseInt(outfitId, 10),
+      outfit_id: String(outfitId),
       description: note.trim()
     };
 
     try {
       const res = await fetch(`${BASE_URL}/api/planner`, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)
       });
@@ -90,19 +93,21 @@ export function OutfitPlannerPage() {
       if (res.ok) {
         // Fetch the updated plans to ensure we have the new database ID for deletion
         const monthStr = `${month.getFullYear()}-${String(month.getMonth() + 1).padStart(2, '0')}`;
-        const refreshRes = await fetch(`${BASE_URL}/api/planner/${monthStr}`);
+        const refreshRes = await fetch(`${BASE_URL}/api/planner/${monthStr}`, {
+          credentials: "include"
+        });
         if (refreshRes.ok) {
           const data = await refreshRes.json();
           setPlans(data.planned_outfits || []);
         } else {
-          setPlans(prev => [...prev.filter(p => !(p.date === selectedDate && p.outfit_id === payload.outfit_id)), payload]);
+          setPlans(prev => [...prev.filter(p => !(p.date === selectedDate && String(p.outfit_id) === String(payload.outfit_id))), payload]);
         }
 
         setNote(''); setError(''); setSuccess('Outfit added to your calendar database.');
       } else {
         setError('Failed to save outfit to database.');
       }
-    } catch (err) {
+    } catch {
       setError('Could not connect to backend.');
     }
   };
@@ -113,19 +118,20 @@ export function OutfitPlannerPage() {
       try {
         const response = await fetch(`${BASE_URL}/api/planner/${plan.id}`, {
           method: 'DELETE',
+          credentials: "include"
         });
 
         if (!response.ok) {
           setError("Failed to delete from database");
           return;
         }
-      } catch (error) {
+      } catch {
         setError("Error connecting to backend.");
         return;
       }
     }
 
-    setPlans(prev => prev.filter(p => !(p.date === plan.date && p.outfit_id === plan.outfit_id)));
+    setPlans(prev => prev.filter(p => !(p.date === plan.date && String(p.outfit_id) === String(plan.outfit_id))));
     setSuccess('Planned outfit permanently removed.');
     setError('');
   };

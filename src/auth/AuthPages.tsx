@@ -14,7 +14,7 @@ export const checkSession = async () => {
   try {
     const response = await axios.get(`${API_URL}/auth/me`);
     return response.data;
-  } catch (error) {
+  } catch {
     return null;
   }
 };

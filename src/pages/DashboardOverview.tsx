@@ -29,6 +29,7 @@ export function DashboardOverview() {
   });
 
   const navigate = useNavigate();
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
   // Helper function to format today's date
   const getTodayFormatted = () => {
@@ -41,13 +42,13 @@ export function DashboardOverview() {
     // 1. Fetch User Name
     checkSession().then(user => {
       if (active && user) {
-        const displayName = user.name || user.firstName || (user.email ? user.email.split('@')[0] : 'User');
+        const displayName = user.name || (user.email ? user.email.split('@')[0] : 'User');
         setUserName(displayName.charAt(0).toUpperCase() + displayName.slice(1));
       }
     });
 
     // 2. Fetch Real Analytics from FastAPI
-    fetch("http://localhost:8000/api/v1/analytics/wardrobe", { credentials: "include" })
+    fetch(`${BASE_URL}/api/v1/analytics/wardrobe`, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
         if (active && !data.error) {
@@ -73,7 +74,7 @@ export function DashboardOverview() {
         const address = geoData.address || {};
         const locName = address.village || address.suburb || address.town || address.city || address.county || "Current Location";
 
-        const weatherRes = await fetch(`http://localhost:8000/api/v1/weather?lat=${lat}&lon=${lon}`, {
+        const weatherRes = await fetch(`${BASE_URL}/api/v1/weather?lat=${lat}&lon=${lon}`, {
           credentials: "include"
         });
 

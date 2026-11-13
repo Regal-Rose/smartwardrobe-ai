@@ -2,6 +2,8 @@ import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 
 export default function UploadClothing() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
   const [uploading, setUploading] = useState(false);
   const [cleanImageUrl, setCleanImageUrl] = useState<string | null>(null);
 
@@ -18,7 +20,7 @@ export default function UploadClothing() {
     try {
       // Send to the FastAPI endpoint we built in Phase 1
       // Replace with your VITE_API_BASE_URL if you have one configured
-      const response = await fetch("http://localhost:8000/api/upload-clothing", {
+      const response = await fetch(`${BASE_URL}/api/upload-clothing`, {
         method: "POST",
         body: formData,
       });
@@ -26,7 +28,7 @@ export default function UploadClothing() {
       if (response.ok) {
         const data = await response.json();
         // The backend returns the file path, so we prepend the backend URL to view it
-        setCleanImageUrl(`http://localhost:8000${data.file_url}`);
+        setCleanImageUrl(`${BASE_URL}${data.file_url}`);
       } else {
         console.error("Upload failed");
       }

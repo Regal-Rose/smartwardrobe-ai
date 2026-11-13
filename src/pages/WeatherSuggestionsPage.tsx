@@ -35,6 +35,8 @@ interface WeatherData {
   };
 }
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
 export function WeatherSuggestionsPage() {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [locationName, setLocationName] = useState<string>("Locating...");
@@ -55,7 +57,7 @@ export function WeatherSuggestionsPage() {
         if (active) setLocationName(locName);
 
         // 2. Get the weather & clothing recommendations from your backend WITH credentials
-        const res = await fetch(`http://localhost:8000/api/v1/weather?lat=${lat}&lon=${lon}`, {
+        const res = await fetch(`${BASE_URL}/api/v1/weather?lat=${lat}&lon=${lon}`, {
           credentials: "include"
         });
 

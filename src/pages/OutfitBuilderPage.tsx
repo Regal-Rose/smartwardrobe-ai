@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { UploadCloud, User, Shirt, Wand2, Loader2, RefreshCcw, Grid, X } from 'lucide-react';
 
 export function OutfitBuilderPage() {
+  const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+
   const [personFile, setPersonFile] = useState<File | null>(null);
   const [garmentFile, setGarmentFile] = useState<File | null>(null);
   const [personPreview, setPersonPreview] = useState<string | null>(null);
@@ -21,10 +23,11 @@ export function OutfitBuilderPage() {
 
   // Fetch saved clothes when the page loads
   useEffect(() => {
-    fetch("http://localhost:8000/api/clothing")
+    fetch(`${BASE_URL}/api/v1/garments`, { credentials: "include" })
       .then(res => res.json())
       .then(data => {
-        setSavedClothes(Array.isArray(data) ? data : data.items || []);
+        const items = Array.isArray(data) ? data : data.items || [];
+        setSavedClothes(items.map((g: any) => ({ ...g, image_url: g.imageData || g.image_url || '' })));
       })
       .catch(err => console.error("Could not load wardrobe", err));
   }, []);
@@ -47,17 +50,22 @@ export function OutfitBuilderPage() {
   const handleSelectSavedGarment = async (imageUrl: string) => {
     try {
       setError(null);
-      const response = await fetch(imageUrl);
-      if (!response.ok) throw new Error("Failed to fetch image");
-      const blob = await response.blob();
-      const fileName = imageUrl.split('/').pop() || 'wardrobe_item.jpg';
-      const file = new File([blob], fileName, { type: blob.type });
+      let blob: Blob;
+      if (imageUrl.startsWith('data:')) {
+        const res = await fetch(imageUrl);
+        blob = await res.blob();
+      } else {
+        const response = await fetch(imageUrl);
+        if (!response.ok) throw new Error("Failed to fetch image");
+        blob = await response.blob();
+      }
+      const file = new File([blob], 'wardrobe_item.png', { type: blob.type || 'image/png' });
 
       setGarmentFile(file);
       setGarmentPreview(imageUrl);
       setShowWardrobeModal(false);
-    } catch (err) {
-      console.error(err);
+    } catch (_err) {
+      console.error(_err);
       setError("Failed to load the selected garment image.");
     }
   };
@@ -79,7 +87,7 @@ export function OutfitBuilderPage() {
     formData.append("description", "A stylish garment");
 
     try {
-      const response = await fetch("http://localhost:8000/api/try-on", {
+      const response = await fetch(`${BASE_URL}/api/try-on`, {
         method: "POST",
         body: formData,
       });
@@ -90,7 +98,7 @@ export function OutfitBuilderPage() {
       } else {
         setError(data.error || "Failed to generate try-on image.");
       }
-    } catch (err) {
+    } catch {
       setError("Could not connect to the backend server. Make sure it is running.");
     } finally {
       setIsLoading(false);
