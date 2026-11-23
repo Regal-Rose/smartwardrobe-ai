@@ -13,7 +13,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <Sidebar />
 
       {/* 2. The Main Content Area */}
-      <main className="flex-1 ml-[80px] xl:ml-[240px] p-6 lg:p-10 transition-all duration-300 w-full h-screen overflow-y-auto">
+      <main className="flex-1 ml-[80px] lg:ml-[240px] p-6 lg:p-10 transition-all duration-300 w-full h-screen overflow-y-auto">
         <div className="max-w-[1400px] mx-auto">
 
           {/* 3. This magically renders whichever page App.tsx tells it to! */}
