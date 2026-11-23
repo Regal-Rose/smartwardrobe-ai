@@ -825,3 +825,8 @@ def delete_planned_outfit(plan_id: int, request: Request):
         if cur.rowcount == 0:
             raise HTTPException(404, "Outfit plan not found")
     return {"message": "Outfit plan deleted successfully"}
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)
