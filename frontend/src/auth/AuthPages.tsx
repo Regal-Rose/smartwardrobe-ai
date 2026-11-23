@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowRight, Lock, Mail, Loader2 } from 'lucide-react';
+import { ArrowRight, Lock, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -533,6 +533,7 @@ export function AuthPage({ mode = 'login' }: { mode?: 'login' | 'register' }) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false); // <--- ADDED STATE FOR EYE BUTTON
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -659,14 +660,26 @@ export function AuthPage({ mode = 'login' }: { mode?: 'login' | 'register' }) {
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-4 w-4 text-[#3B1011]/50" />
                 </div>
+                {/* --- ADDED EYE BUTTON LOGIC HERE --- */}
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3 bg-[#EADDC5] border border-[#3B1011]/20 text-[#3B1011] focus:outline-none focus:border-[#7B2C2D] focus:ring-1 focus:ring-[#7B2C2D] transition-colors rounded-sm"
+                  className="block w-full pl-11 pr-12 py-3 bg-[#EADDC5] border border-[#3B1011]/20 text-[#3B1011] focus:outline-none focus:border-[#7B2C2D] focus:ring-1 focus:ring-[#7B2C2D] transition-colors rounded-sm"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-[#3B1011]/50 hover:text-[#7B2C2D] transition-colors focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
 
